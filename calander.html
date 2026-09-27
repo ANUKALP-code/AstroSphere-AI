@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Future Cosmic Events | AstroSphere</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #020205;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* WebGL Background */
+        #canvas-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -1;
+            pointer-events: none; /* Let clicks pass through to UI */
+        }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: rgba(15, 15, 20, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-card {
+            background: linear-gradient(145deg, rgba(30, 30, 40, 0.6) 0%, rgba(15, 15, 20, 0.4) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(99, 102, 241, 0.5); /* Indigo glow */
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #05050a; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+
+        /* Text Gradients */
+        .text-gradient {
+            background: linear-gradient(to right, #a78bfa, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Loading Screen */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #020205; z-index: 9999; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; transition: opacity 1s ease;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="loader">
+        <i class="fa-solid fa-satellite-dish text-4xl text-indigo-500 animate-pulse mb-4"></i>
+        <h2 class="text-2xl font-light tracking-[0.3em] text-gray-300">SYNCING OBSERVATORY</h2>
+        <p class="text-gray-500 mt-2 text-sm">CALCULATING ORBITAL TRAJECTORIES...</p>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <nav class="fixed w-full z-50 glass-panel py-4 px-8 flex justify-between items-center top-0">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='index.html'">
+            <i class="fa-solid fa-arrow-left text-gray-400 hover:text-white transition"></i>
+            <span class="font-bold text-xl tracking-wider">ASTRO<span class="text-indigo-500">SPHERE</span></span>
+        </div>
+        <div class="hidden md:flex gap-6 text-sm font-medium text-gray-300">
+            <a href="#" class="hover:text-white transition">Timeline</a>
+            <a href="#" class="hover:text-white transition">Eclipses</a>
+            <a href="#" class="hover:text-white transition">Missions</a>
+            <button class="bg-indigo-600/20 text-indigo-400 px-4 py-1.5 rounded-full border border-indigo-500/30 hover:bg-indigo-600 hover:text-white transition">
+                Premium Vault
+            </button>
+        </div>
+    </nav>
+
+    <main class="relative z-10 pt-32 px-6 md:px-16 pb-24 max-w-7xl mx-auto">
+        
+        <div class="text-center mb-20 hero-anim">
+            <div class="inline-block mb-4 px-4 py-1 rounded-full border border-white/10 bg-white/5 backdrop-blur-md text-xs font-semibold text-indigo-300 tracking-widest uppercase">
+                Interactive Cosmic Database
+            </div>
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-tight">
+                Future Cosmic <br/> <span class="text-gradient">Events Calendar</span>
+            </h1>
+            <p class="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-10 font-light">
+                Explore the universe's upcoming wonders. Track solar eclipses, rare planetary alignments, and next-generation space missions from 2026 to 2100.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <button class="px-8 py-3 bg-white text-black font-semibold rounded-full hover:bg-gray-200 transition transform hover:scale-105">
+                    Explore Events
+                </button>
+               <a href="https://astrosphere-one.vercel.app/" target="_blank" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg inline-block text-center">
+    <i class="fa-solid fa-orbit mr-2 animate-spin-slow"></i> View 3D Solar System
+</a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-20 hero-anim">
+            <div class="glass-panel p-6 rounded-2xl flex items-center gap-4">
+                <div class="p-3 bg-orange-500/20 rounded-xl text-orange-400"><i class="fa-solid fa-sun text-xl"></i></div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Next Solar Eclipse</p>
+                    <p class="text-lg font-bold">Aug 12, 2026</p>
+                </div>
+            </div>
+            <div class="glass-panel p-6 rounded-2xl flex items-center gap-4">
+                <div class="p-3 bg-blue-500/20 rounded-xl text-blue-400"><i class="fa-solid fa-meteor text-xl"></i></div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Active Shower</p>
+                    <p class="text-lg font-bold">Perseids (Peak)</p>
+                </div>
+            </div>
+            <div class="glass-panel p-6 rounded-2xl flex items-center gap-4">
+                <div class="p-3 bg-gray-500/20 rounded-xl text-gray-300"><i class="fa-solid fa-moon text-xl"></i></div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Moon Phase</p>
+                    <p class="text-lg font-bold">Waning Crescent</p>
+                </div>
+            </div>
+            <div class="glass-panel p-6 rounded-2xl flex items-center gap-4 border-indigo-500/30">
+                <div class="p-3 bg-indigo-500/20 rounded-xl text-indigo-400"><i class="fa-solid fa-rocket text-xl"></i></div>
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Next Major Launch</p>
+                    <p class="text-lg font-bold">Artemis III</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+            <h2 class="text-3xl font-bold">Upcoming Timeline</h2>
+            <div class="flex gap-2">
+                <select class="glass-panel px-4 py-2 rounded-lg text-sm text-gray-300 outline-none">
+                    <option>All Categories</option>
+                    <option>Eclipses</option>
+                    <option>Meteor Showers</option>
+                    <option>Missions</option>
+                </select>
+                <div class="glass-panel px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fa-solid fa-search text-gray-400 text-sm"></i>
+                    <input type="text" placeholder="Search events..." class="bg-transparent border-none outline-none text-sm w-32 md:w-48">
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="events-grid">
+            </div>
+
+            
+
+    </main>
+
+    <div id="cosmic-modal" class="fixed inset-0 z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 bg-black/70 backdrop-blur-md">
+    
+    <div id="modal-box" class="glass-panel p-8 md:p-10 rounded-3xl w-[90%] max-w-2xl relative transform scale-95 border border-indigo-500/30 shadow-[0_0_50px_rgba(99,102,241,0.2)]">
+        
+        <button onclick="closeCosmicModal()" class="absolute top-6 right-6 text-gray-400 hover:text-white transition text-xl">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div id="modal-content">
+            <div class="flex items-center gap-4 mb-6">
+                <div id="modal-icon-container" class="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 text-3xl">
+                    <i class="fa-solid fa-circle-info" id="modal-icon"></i>
+                </div>
+                <div>
+                    <span id="modal-date" class="text-indigo-400 text-sm font-semibold tracking-wider">DATE</span>
+                    <h2 id="modal-title" class="text-2xl md:text-3xl font-bold text-white mt-1">Event Title</h2>
+                </div>
+            </div>
+
+            <p id="modal-desc" class="text-gray-300 text-base leading-relaxed mb-8 font-light">
+                Scientific documentation will load here...
+            </p>
+
+            <div class="grid grid-cols-2 gap-4 pt-6 border-t border-white/10 text-sm">
+                <div>
+                    <p class="text-gray-500 uppercase tracking-widest text-xs mb-1">Category</p>
+                    <p id="modal-category" class="font-semibold text-white">N/A</p>
+                </div>
+                <div>
+                    <p class="text-gray-500 uppercase tracking-widest text-xs mb-1">Observation Status</p>
+                    <p id="modal-importance" class="font-semibold text-white">N/A</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    
+
+    <script type="module">
+
+        
+
+
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // 1. THREE.JS CINEMATIC BACKGROUND ENGINE
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x020205, 0.0015); // Deep space fog
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 50;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // Bloom Post-Processing for Premium Glow
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0.2;
+        bloomPass.strength = 1.5; // Cinematic glow
+        bloomPass.radius = 0.5;
+
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // Particle System: Galaxy & Stars
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 8000;
+        const posArray = new Float32Array(particlesCount * 3);
+        const colorsArray = new Float32Array(particlesCount * 3);
+
+        const colorPalette = [
+            new THREE.Color(0xffffff), // White star
+            new THREE.Color(0xa78bfa), // Purple nebula dust
+            new THREE.Color(0x60a5fa), // Blue star
+            new THREE.Color(0xffaa00)  // Distant giant
+        ];
+
+        for(let i = 0; i < particlesCount * 3; i+=3) {
+            // Distribute stars in a wide cinematic field
+            posArray[i] = (Math.random() - 0.5) * 200;
+            posArray[i+1] = (Math.random() - 0.5) * 200;
+            posArray[i+2] = (Math.random() - 0.5) * 200;
+
+            const color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+            colorsArray[i] = color.r;
+            colorsArray[i+1] = color.g;
+            colorsArray[i+2] = color.b;
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colorsArray, 3));
+
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.2,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+
+        const starMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(starMesh);
+
+        // Mouse Parallax Effect
+        let mouseX = 0;
+        let mouseY = 0;
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX / window.innerWidth) - 0.5;
+            mouseY = (event.clientY / window.innerHeight) - 0.5;
+        });
+
+        // Animation Loop
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            // Slow cinematic rotation
+            starMesh.rotation.y = elapsedTime * 0.02;
+            starMesh.rotation.x = elapsedTime * 0.01;
+
+            // Parallax camera movement based on mouse
+            camera.position.x += (mouseX * 5 - camera.position.x) * 0.05;
+            camera.position.y += (-mouseY * 5 - camera.position.y) * 0.05;
+            camera.lookAt(scene.position);
+
+            composer.render();
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+
+        // 2. REALISTIC EVENT DATA GENERATION & GSAP ANIMATIONS
+        const cosmicEvents = [
+            {
+                title: "Total Solar Eclipse",
+                date: "Aug 12, 2026",
+                category: "Eclipse",
+                icon: "fa-sun",
+                color: "text-orange-400",
+                desc: "A breathtaking total solar eclipse visible across the Arctic, Greenland, Iceland, and Northern Spain. Totality will last up to 2 minutes and 18 seconds.",
+                importance: "High"
+            },
+            {
+                title: "Artemis III Lunar Landing",
+                date: "Sept 2026 (Est)",
+                category: "Mission",
+                icon: "fa-rocket",
+                color: "text-indigo-400",
+                desc: "NASA's historic mission to return humans to the Moon, targeting the lunar South Pole region with the SpaceX Starship HLS.",
+                importance: "Critical"
+            },
+            {
+                title: "Perseid Meteor Shower",
+                date: "Aug 12-13, 2026",
+                category: "Phenomenon",
+                icon: "fa-meteor",
+                color: "text-blue-400",
+                desc: "One of the most spectacular meteor showers of the year, producing up to 100 meteors per hour at its peak. Favorable viewing conditions expected.",
+                importance: "Medium"
+            },
+            {
+                title: "Jupiter Opposition",
+                date: "Nov 20, 2026",
+                category: "Planetary",
+                icon: "fa-globe",
+                color: "text-yellow-400",
+                desc: "Jupiter will be at its closest approach to Earth and its face will be fully illuminated by the Sun. Best time to photograph its moons.",
+                importance: "Medium"
+            },
+            {
+                title: "Asteroid Apophis Flyby",
+                date: "Apr 13, 2029",
+                category: "Rare Event",
+                icon: "fa-burst",
+                color: "text-red-400",
+                desc: "The 340-meter asteroid Apophis will pass within 32,000 km of Earth's surface, closer than some geosynchronous satellites. Visible to the naked eye.",
+                importance: "Critical"
+            },
+            {
+                title: "Mars Sample Return",
+                date: "2031 (Est)",
+                category: "Mission",
+                icon: "fa-satellite",
+                color: "text-green-400",
+                desc: "A joint NASA/ESA campaign to return scientifically selected samples from the Martian surface back to Earth for deep laboratory analysis.",
+                importance: "High"
+            }
+        ];
+
+        // Populate Grid
+
+
+        
+        const grid = document.getElementById('events-grid');
+        cosmicEvents.forEach(ev => {
+            const importanceBadge = ev.importance === 'Critical' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 
+                                    ev.importance === 'High' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 
+                                    'bg-gray-500/20 text-gray-400 border-gray-500/30';
+
+            
+
+
+        // Populate Grid with Data Attributes for Identification
+        const grid = document.getElementById('events-grid');
+        cosmicEvents.forEach((ev, index) => {
+            const importanceBadge = ev.importance === 'Critical' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 
+                                    ev.importance === 'High' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 
+                                    'bg-gray-500/20 text-gray-400 border-gray-500/30';
+
+            const cardHTML = `
+                <div class="glass-card p-6 rounded-2xl flex flex-col justify-between h-full event-card opacity-0">
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-3 bg-white/5 rounded-xl ${ev.color}">
+                                <i class="fa-solid ${ev.icon} text-2xl"></i>
+                            </div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border ${importanceBadge}">
+                                ${ev.importance}
+                            </span>
+                        </div>
+                        <p class="text-indigo-300 text-sm font-semibold tracking-wide mb-1">${ev.date}</p>
+                        <h3 class="text-xl font-bold mb-2">${ev.title}</h3>
+                        <p class="text-gray-400 text-sm leading-relaxed mb-6 line-clamp-3">${ev.desc}</p>
+                    </div>
+                    <div class="pt-4 border-t border-white/10 flex justify-between items-center">
+                        <span class="text-xs text-gray-500 uppercase tracking-widest">${ev.category}</span>
+                        <button onclick="openCosmicModal(${index})" class="text-sm font-medium text-white hover:text-indigo-400 transition flex items-center gap-2">
+                            Details <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            grid.innerHTML += cardHTML;
+        });
+
+        // ==========================================
+        // PRO MODAL INTERACTION FUNCTIONS
+        // ==========================================
+        window.openCosmicModal = function(index) {
+            const data = cosmicEvents[index];
+            
+            // Injecting real data into the modal elements dynamically
+            document.getElementById('modal-title').innerText = data.title;
+            document.getElementById('modal-date').innerText = data.date;
+            document.getElementById('modal-desc').innerText = data.desc;
+            document.getElementById('modal-category').innerText = data.category;
+            document.getElementById('modal-importance').innerText = data.importance;
+            
+            // Update icon inside modal to match card icon
+            const iconEl = document.getElementById('modal-icon');
+            iconEl.className = `fa-solid ${data.icon}`;
+            
+            // Show Modal Wrapper
+            const modal = document.getElementById('cosmic-modal');
+            modal.classList.remove('pointer-events-none');
+            
+            // GSAP Cinematic Popup Animation (Sci-Fi pop feel)
+            gsap.to(modal, { opacity: 1, duration: 0.3 });
+            gsap.fromTo("#modal-box", 
+                { scale: 0.8, y: 50 }, 
+                { scale: 1, y: 0, duration: 0.5, ease: "power4.out" }
+            );
+        };
+
+        window.closeCosmicModal = function() {
+            const modal = document.getElementById('cosmic-modal');
+            modal.classList.add('pointer-events-none');
+            
+            // Close animation
+            gsap.to(modal, { opacity: 0, duration: 0.3 });
+            gsap.to("#modal-box", { scale: 0.8, y: 30, duration: 0.3 });
+        };
+    })                            
+
+
+
+
+        // Remove Loader & Play Entry Animations
+        window.onload = () => {
+            setTimeout(() => {
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loader').remove();
+                    
+                    // GSAP Entrance Animations
+                    gsap.fromTo(".hero-anim", 
+                        { y: 30, opacity: 0 }, 
+                        { y: 0, opacity: 1, duration: 1, stagger: 0.2, ease: "power3.out" }
+                    );
+
+                    // GSAP ScrollTrigger for Cards
+                    gsap.registerPlugin(ScrollTrigger);
+                    gsap.to(".event-card", {
+                        y: 0,
+                        opacity: 1,
+                        duration: 0.8,
+                        stagger: 0.1,
+                        ease: "power2.out",
+                        scrollTrigger: {
+                            trigger: "#events-grid",
+                            start: "top 80%"
+                        }
+                    });
+                }, 500);
+            }, 1500);
+        };
+
+
+
+        // --- Solar System Engine ---
+const solarContainer = document.getElementById('solar-container');
+const solarScene = new THREE.Scene();
+const solarCamera = new THREE.PerspectiveCamera(45, solarContainer.clientWidth / 600, 0.1, 1000);
+solarCamera.position.set(0, 20, 30);
+
+const solarRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+solarRenderer.setSize(solarContainer.clientWidth, 600);
+solarContainer.appendChild(solarRenderer.domElement);
+
+const solarControls = new OrbitControls(solarCamera, solarRenderer.domElement);
+
+// Sun (The Center)
+const sun = new THREE.Mesh(new THREE.SphereGeometry(2, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffcc00 }));
+solarScene.add(sun);
+
+// Planet Helper Function
+function createPlanet(size, distance, color, speed) {
+    const orbit = new THREE.Group();
+    const material = new THREE.MeshStandardMaterial({ color });
+    const planet = new THREE.Mesh(new THREE.SphereGeometry(size, 32, 32), material);
+    planet.position.x = distance;
+    orbit.add(planet);
+    solarScene.add(orbit);
+    return { orbit, planet, speed };
+}
+
+// Data: [Size, Distance, Color, Speed]
+const planets = [
+    createPlanet(0.5, 5, 0xaaaaaa, 0.02), // Mercury
+    createPlanet(0.8, 8, 0xe1a164, 0.015), // Venus
+    createPlanet(0.8, 12, 0x2277ff, 0.01), // Earth
+    createPlanet(0.6, 16, 0xff4422, 0.008)  // Mars
+];
+
+// Lighting
+solarScene.add(new THREE.AmbientLight(0x333333));
+const light = new THREE.PointLight(0xffffff, 2, 100);
+solarScene.add(light);
+
+// Animation Loop
+function animateSolar() {
+    requestAnimationFrame(animateSolar);
+    planets.forEach(p => p.orbit.rotation.y += p.speed);
+    solarRenderer.render(solarScene, solarCamera);
+}
+animateSolar();
+
+
+        
+    </script>
+</body>
+</html>

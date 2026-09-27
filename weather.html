@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Route Weather | AstroSphere AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; margin: 0; background-color: #050505; color: #ffffff; min-height: 100vh; }
+        
+        /* Background Space Video */
+        #bg-video { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -1; object-fit: cover; opacity: 0.3; }
+
+        .glass-panel {
+            background: rgba(15, 15, 20, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .report-box {
+            background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 16px; padding: 20px; min-height: 150px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(79, 70, 229, 0.5); border-radius: 10px; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-6 relative">
+
+    <video autoplay muted loop id="bg-video">
+        <source src="https://cdn.pixabay.com/video/2020/04/17/36384-411475147_large.mp4" type="video/mp4">
+    </video>
+
+    <div onclick="window.location.href='index.html'" class="absolute top-6 left-6 z-10 text-white cursor-pointer hover:text-indigo-400 transition-colors ui-element">
+        <span class="text-xl font-bold tracking-widest">← RETURN TO HUB</span>
+    </div>
+
+    <div class="glass-panel p-8 md:p-12 rounded-3xl w-full max-w-4xl z-10 ui-element mt-12">
+        <div class="text-center mb-10">
+            <h1 class="text-3xl md:text-5xl font-bold mb-3">Cosmic Travel <span class="text-indigo-400">Weather</span></h1>
+            <p class="text-gray-400 text-sm md:text-base">Enter your route to generate an AI-powered terrestrial and astronomical weather report.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2">Origin</label>
+                    <input type="text" id="origin" placeholder="e.g., Prayagraj" class="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white transition-all">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2">Destination</label>
+                    <input type="text" id="destination" placeholder="e.g., Varanasi" class="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white transition-all">
+                </div>
+
+                <button onclick="scanRoute()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(79,70,229,0.4)] transform hover:-translate-y-1">
+                    Scan Route & Weather
+                </button>
+            </div>
+
+            <div class="flex flex-col">
+                <div class="flex items-center gap-3 border-b border-white/10 pb-4 mb-4">
+                    <div class="w-3 h-3 bg-indigo-500 rounded-full animate-pulse"></div>
+                    <h2 class="text-lg font-bold tracking-wider">Agent Report</h2>
+                </div>
+                
+                <div class="report-box flex-1 text-gray-300 text-sm leading-relaxed overflow-y-auto" id="report-output">
+                    <p class="text-gray-500 italic text-center mt-10">Awaiting route coordinates...</p>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        // Smooth entrance animation
+        gsap.from(".ui-element", { duration: 1.2, y: 30, opacity: 0, stagger: 0.2, ease: "power3.out" });
+
+        let typeInterval;
+
+        function typeWriter(text, elementId, i=0) {
+            const el = document.getElementById(elementId);
+            if(i===0) { el.innerHTML = ''; clearInterval(typeInterval); }
+            if(i < text.length) {
+                el.innerHTML += text.charAt(i) === '\n' ? '<br>' : text.charAt(i);
+                typeInterval = setTimeout(() => typeWriter(text, elementId, i+1), 15);
+            }
+        }
+        async function scanRoute() {
+            const origin = document.getElementById('origin').value;
+            const dest = document.getElementById('destination').value;
+
+            if(!origin || !dest) {
+                alert("Please enter both Origin and Destination.");
+                return;
+            }
+
+            typeWriter(`Initializing satellite scan for route: ${origin} → ${dest}...\n\n[Waiting for n8n API connection...]`, 'report-output');
+
+            // ⚠️ APNA n8n ASTRO-WEATHER WEBHOOK URL YAHAN DAALO ⚠️
+            const WEBHOOK_URL = "https://anukalppradhan777.app.n8n.cloud/webhook/master-astro-api"; 
+
+            try {
+              const response = await fetch(WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+        app_type: "weather",
+        origin: origin, 
+        destination: dest 
+    })
+});
+                if(response.ok) {
+                    const data = await response.json();
+                    console.log("n8n Response Data:", data); // Isse console mein poora data dikhega
+
+                    let aiAnswer = "";
+
+                    // n8n aur Gemini ke saare possible response formats ko handle karne ke liye smart check:
+                    if (typeof data === 'string') {
+                        aiAnswer = data;
+                    } else if (data.text) {
+                        aiAnswer = data.text;
+                    } else if (data.output) {
+                        aiAnswer = data.output;
+                    } else if (data[0] && data[0].text) {
+                        aiAnswer = data[0].text;
+                    } else if (data[0] && data[0].output) {
+                        aiAnswer = data[0].output;
+                    } else if (data.output?.text) {
+                        aiAnswer = data.output.text;
+                    } else {
+                        // Agar format phir bhi samajh na aaye, toh use readable string bana do
+                        aiAnswer = data.message || JSON.stringify(data);
+                    }
+                    
+                    typeWriter("Astro-Agent Report:\n\n" + aiAnswer, 'report-output');
+                } else {
+                    typeWriter("Connection Failed. Make sure n8n workflow is running.", 'report-output');
+                }
+            } catch(e) {
+                console.error(e);
+                typeWriter("System Error: Unable to reach the AI backend.", 'report-output');
+            }
+        }
+        
+    </script>
+</body>
+</html>

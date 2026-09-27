@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Exploration | AstroSphere AI</title>
+    <link rel="stylesheet" href="./output.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #030305; font-family: 'Space Grotesk', sans-serif; color: white; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        
+        .glass-panel {
+            background: rgba(10, 10, 15, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; z-index: 10;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        /* Cosmic Navigator Sidebar */
+        .sidebar {
+            position: absolute; left: 2rem; top: 5rem; bottom: 2rem; width: 280px;
+            display: flex; flex-direction: column; padding: 1.5rem;
+        }
+
+        .planet-list {
+            flex-1; overflow-y: auto; padding-right: 10px; margin-top: 10px;
+        }
+        
+        .planet-btn {
+            width: 100%; text-align: left; padding: 12px 16px; margin-bottom: 8px;
+            background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid transparent;
+            transition: all 0.3s ease; cursor: pointer; color: #cbd5e1; font-size: 14px;
+        }
+        .planet-btn:hover { background: rgba(79, 70, 229, 0.2); border-color: rgba(79, 70, 229, 0.5); color: white; }
+        .planet-btn.active { background: rgba(79, 70, 229, 0.4); border-color: #4f46e5; color: white; font-weight: bold; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(79, 70, 229, 0.5); border-radius: 10px; }
+
+        /* AI Knowledge Agent Panel */
+        .ai-panel { position: absolute; right: 2rem; top: 2rem; bottom: 2rem; width: 380px; display: flex; flex-direction: column; padding: 1.5rem; }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+<div class="absolute top-6 left-6 z-50 flex items-center gap-6">
+    
+    <div class="text-white cursor-pointer hover:text-indigo-400 transition-colors font-bold tracking-widest text-lg" onclick="window.location.href='index.html'">
+        ← HUB
+    </div>
+
+    <div class="bg-zinc-900/80 backdrop-blur-md border border-white/10 px-5 py-2 rounded-xl min-w-[180px] flex flex-col justify-center">
+        <h2 class="text-xs font-bold tracking-wider text-gray-300 uppercase m-0 leading-none">Virat Pradhan</h2>
+        <span id="user-badge-display" class="text-[11px] font-semibold text-indigo-400 mt-1 block">🚀 Connecting to DB...</span>
+    </div>
+
+</div>
+        
+    </div>
+
+
+
+
+
+
+    <div class="absolute top-6 left-6 z-10 text-white cursor-pointer hover:text-indigo-400 transition-colors ui-element">
+        <span class="text-lg font-bold tracking-widest">← HUB</span>
+    </div>
+
+    <div class="sidebar glass-panel ui-element">
+        <h3 class="text-sm text-indigo-400 font-bold uppercase tracking-widest mb-2">Cosmic Navigator</h3>
+        <div class="planet-list" id="navigator-list">
+            </div>
+    </div>
+
+    <div class="ai-panel glass-panel ui-element">
+        <div class="flex items-center gap-3 border-b border-white/10 pb-4 mb-4">
+            <div class="w-3 h-3 bg-indigo-500 rounded-full animate-pulse"></div>
+            <h2 class="text-lg font-bold tracking-wider">Astro-Agent Online</h2>
+        </div>
+        <div class="chat-box flex-1 overflow-y-auto pr-2 mb-4 space-y-4 text-gray-300 text-sm leading-relaxed" id="agent-response">
+            <p id="typing-text" class="text-white"></p>
+        </div>
+        
+        <div class="mt-auto pt-4 border-t border-white/10 relative">
+    <input type="text" id="user-question" placeholder="Ask anything about this planet..." class="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all text-white placeholder-gray-500">
+    <button onclick="askAstroAgent()" class="absolute right-2 top-[22px] bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-lg transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+    </button>
+</div>
+           
+            </button>
+        </div>
+    </div>
+
+    <script>
+       
+        const celestialBodies = {
+
+             "Mercury": { texture: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQlwzf5SpNbULjjvq43kmWSfncGa6Qt8uLobw&s', desc: "Our home. The only known planet to harbor life." },
+
+        
+           
+            // Earth works because it uses a direct web link
+            "Earth": { texture: 'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg', desc: "Our home. The only known planet to harbor life." },
+
+            "Mars": { texture: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Solarsystemscope_texture_8k_mars.jpg/1920px-Solarsystemscope_texture_8k_mars.jpg?_=20201026210228', desc: "Our home. The only known planet to harbor life." },
+            
+            "venus": { texture: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Solarsystemscope_texture_2k_venus_atmosphere.jpg/1920px-Solarsystemscope_texture_2k_venus_atmosphere.jpg?_=20201026210311', desc: "Our home. The only known planet to harbor life." },
+
+            "jupiter": { texture: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSYX5VxEvm7POp6gKQHZCZOQVCELDMaNtT6bA&s', desc: "Our home. The only known planet to harbor life." },
+
+            "Saturn": { texture: 'https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/5938ae9e-47de-424a-8836-f98e6658d37b/dc7weok-ac20c1ef-c812-4b67-9564-a63ce0e453c5.png/v1/fill/w_1264,h_632,q_70,strp/saturn_2011_texture_map_by_askaniy_dc7weok-pre.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MjA0OCIsInBhdGgiOiIvZi81OTM4YWU5ZS00N2RlLTQyNGEtODgzNi1mOThlNjY1OGQzN2IvZGM3d2Vvay1hYzIwYzFlZi1jODEyLTRiNjctOTU2NC1hNjNjZTBlNDUzYzUucG5nIiwid2lkdGgiOiI8PTQwOTYifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.hSNEIWhiiu9cUuaK7IvXX-Nx7GalvQc8XyY092ooeMo', desc: "Famous for its stunning and complex ring system." },
+            "Uranus": { texture: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5m6I1cNvdxJo1hMYBzgmMzcD1viyiItRiyg&s', desc: "An ice giant that rotates on its side." },
+            "sun" : { texture:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRE7q_NoC49WiU1JYZAZdMEHD5sl_Bli3TiOw&s', desc:" hello sir "},
+            "Proxima Centauri b": { texture:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmBA2E5e2CduB3n_ZaT16mNQhS1qMaojFxaA&s', desc: "The closest known exoplanet to our Solar System." },
+            "Kepler-22b": { texture:'https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/2f961ba4-4243-4889-928c-e7f4c2d38614/di8om6n-f2bf9e37-568c-4204-9a36-3b520bd8f407.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiIvZi8yZjk2MWJhNC00MjQzLTQ4ODktOTI4Yy1lN2Y0YzJkMzg2MTQvZGk4b202bi1mMmJmOWUzNy01NjhjLTQyMDQtOWEzNi0zYjUyMGJkOGY0MDcucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.v9T8Ocm2c_XTUTny3TStd1CDFnvBqqe3J-LjkkiO1ec', desc: "A possible 'water world' located in the habitable zone." },
+            "Kepler-452b": { texture: 'https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/2f961ba4-4243-4889-928c-e7f4c2d38614/dgc7yn7-d8cfb286-1c43-49ce-9354-05cfc24a7453.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiIvZi8yZjk2MWJhNC00MjQzLTQ4ODktOTI4Yy1lN2Y0YzJkMzg2MTQvZGdjN3luNy1kOGNmYjI4Ni0xYzQzLTQ5Y2UtOTM1NC0wNWNmYzI0YTc0NTMuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.uE9zGTWn4YWb3NxJxs4wIbplnJP1he-5gWvtHadk9is',desc: "Often called 'Earth 2.0', orbiting a sun-like star." },
+            "Kepler-186f": { texture: 'https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/dde7d5c8-4c89-4897-a8ac-dac2a6ac13e7/dibs8t4-9905100e-1536-4d99-82c7-b856f07ea545.jpg/v1/fill/w_1280,h_640,q_75,strp/kepler_186_f_texture_by_omegacomparisons_dibs8t4-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NjQwIiwicGF0aCI6Ii9mL2RkZTdkNWM4LTRjODktNDg5Ny1hOGFjLWRhYzJhNmFjMTNlNy9kaWJzOHQ0LTk5MDUxMDBlLTE1MzYtNGQ5OS04MmM3LWI4NTZmMDdlYTU0NS5qcGciLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.WKetxBoaz-EQqtXoTKnzt9aEjPyuvsAYRPXAMQG8KcM', desc: "The first Earth-size planet found in the habitable zone." },
+            "TRAPPIST-1b": { texture:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQMfiuVWRxwZ6Ncm2ywq_50H01Xjr59FFtUYA&s', desc: "Innermost rocky planet of the TRAPPIST-1 system." },
+            "cres": { texture:'https://assets.science.nasa.gov/dynamicimage/assets/science/psd/solar/2023/09/p/i/a/2/PIA20354_hires.jpg?w=1200&h=600&fit=clip&crop=faces%2Cfocalpoint', desc: "Likely has a thick, Venus-like atmosphere." },
+            "TRAPPIST-1d": { texture:'https://assets.science.nasa.gov/dynamicimage/assets/science/astro/exo-explore/2024/03/TRAPPIST-1e.png?w=600&h=600&fit=clip&crop=faces%2Cfocalpoint', desc: "A potential water-rich world." },
+            "TRAPPIST-1e": { texture: 'https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/2f961ba4-4243-4889-928c-e7f4c2d38614/dgdcrg4-b769ee6e-1a95-4faa-a550-052a7f9f53ba.jpg/v1/fit/w_375,h_188,q_70,strp/trappist_1d_map_2k_by_greaterhtrae_dgdcrg4-375w.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTI4MCIsInBhdGgiOiJcL2ZcLzJmOTYxYmE0LTQyNDMtNDg4OS05MjhjLWU3ZjRjMmQzODYxNFwvZGdkY3JnNC1iNzY5ZWU2ZS0xYTk1LTRmYWEtYTU1MC0wNTJhN2Y5ZjUzYmEuanBnIiwid2lkdGgiOiI8PTI1NjAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.zUopfkxjq2U3wRZJHqBexUpRyx6P3qeVTms2o4jiU2k', desc: "One of the best candidates for habitability." },
+            "TRAPPIST-1f": { color: 0x99bbff, desc: "An icy or water-rich world further from its star." },
+            "TRAPPIST-1g": { color: 0xccd9ff, desc: "A cold, distant rocky world." },
+            "TRAPPIST-1h": { color: 0xe6ecff, desc: "The outermost, icy world of the TRAPPIST-1 system." },
+            "55 Cancri e": { texture :'https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/2f961ba4-4243-4889-928c-e7f4c2d38614/di3bevs-54a1019d-aee4-45e1-a849-41d01152fc89.png/v1/fit/w_375,h_188,q_70,strp/vulcan_map_2k__updated___by_greaterhtrae_di3bevs-375w.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTI4MCIsInBhdGgiOiJcL2ZcLzJmOTYxYmE0LTQyNDMtNDg4OS05MjhjLWU3ZjRjMmQzODYxNFwvZGkzYmV2cy01NGExMDE5ZC1hZWU0LTQ1ZTEtYTg0OS00MWQwMTE1MmZjODkucG5nIiwid2lkdGgiOiI8PTI1NjAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.ZN0f69iYinvLCSBgvT49OjAtaJjtqQ7QHqJRH8rLu1I', desc: "A super-hot, potentially diamond-rich 'hell world'." }
+        };
+
+        
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 4;
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; controls.dampingFactor = 0.05; controls.enablePan = false;
+        controls.minDistance = 2; controls.maxDistance = 10;
+
+        const geometry = new THREE.SphereGeometry(1.2, 64, 64);
+        const textureLoader = new THREE.TextureLoader();
+        
+        let planetMesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 }));
+        scene.add(planetMesh);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+        const pointLight = new THREE.PointLight(0xffffff, 1.5); pointLight.position.set(5, 3, 5); scene.add(pointLight);
+        
+        const starsGeo = new THREE.BufferGeometry();
+        const posArray = new Float32Array(2000 * 3);
+        for(let i=0; i<6000; i++) posArray[i] = (Math.random() - 0.5) * 20;
+        starsGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const stars = new THREE.Points(starsGeo, new THREE.PointsMaterial({ size: 0.005, color: 0xffffff }));
+        scene.add(stars);
+
+        // --- 3. UI and Logic Integration ---
+        const navigatorList = document.getElementById('navigator-list');
+        const typingBox = document.getElementById('typing-text');
+        let typeInterval;
+
+        function typeWriter(text, i=0) {
+            if(i===0) { typingBox.innerHTML = ''; clearInterval(typeInterval); }
+            if(i < text.length) {
+                typingBox.innerHTML += text.charAt(i);
+                typeInterval = setTimeout(() => typeWriter(text, i+1), 20);
+            }
+        }
+
+        function loadPlanet(name) {
+            const data = celestialBodies[name];
+            
+            document.querySelectorAll('.planet-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${name.replace(/\s+/g, '-')}`).classList.add('active');
+
+            
+            if (planetMesh.material.map) {
+                planetMesh.material.map.dispose();
+            }
+            planetMesh.material.dispose();
+
+            if(data.texture) {
+                planetMesh.material = new THREE.MeshStandardMaterial({
+                    map: textureLoader.load(data.texture),
+                    roughness: 0.6,
+                    metalness: 0.1
+                });
+            } else {
+                planetMesh.material = new THREE.MeshStandardMaterial({
+                    color: data.color,
+                    roughness: 0.7,
+                    metalness: 0.2
+                });
+            }
+
+            const promptStr = `System connected to ${name}... \n\nInitiating scan...\n\n${data.desc} \n\n[Waiting for n8n Backend API connection ...]`;
+            typeWriter(promptStr);
+            
+            gsap.fromTo(planetMesh.scale, {x:0.5, y:0.5, z:0.5}, {x:1, y:1, z:1, duration: 1.5, ease: "elastic.out(1, 0.5)"});
+        }
+
+        Object.keys(celestialBodies).forEach(name => {
+            const btn = document.createElement('button');
+            btn.className = 'planet-btn';
+            btn.id = `btn-${name.replace(/\s+/g, '-')}`;
+            btn.innerText = name;
+            btn.onclick = () => loadPlanet(name);
+            navigatorList.appendChild(btn);
+        });
+
+        loadPlanet('Earth');
+
+        function animate() {
+            requestAnimationFrame(animate);
+            planetMesh.rotation.y += 0.001; stars.rotation.y -= 0.0002;
+            controls.update(); renderer.render(scene, camera);
+        }
+        animate();
+
+
+
+        //supa base connection add kareneg
+        const SUPABASE_URL = "https://rpqzhuvlpysatxztrudd.supabase.co";
+        
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwcXpodXZscHlzYXR4enRydWRkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTk3Mzc2NiwiZXhwIjoyMDk3NTQ5NzY2fQ.QPhZw1Qg3MAcB6C0Om7r5G488t34K7Pmuft8SFZGcEo";
+
+        async function loadUserStats() {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/user_profile?select=*`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.length > 0) {
+                        const userStats = data[0];
+                        const points = userStats.points;
+                        const badge = userStats.badge;
+
+                        const displayElement = document.getElementById('user-badge-display');
+                        if (displayElement) {
+                            displayElement.innerText = `🚀 ${badge} (${points} Pts)`;
+                        }
+                    }
+                } else {
+                    console.warn(`Database request failed with status ${response.status}. Table may not exist or credentials are invalid.`);
+                }
+            } catch (error) {
+                console.error("Database connection error:", error);
+            }
+        }
+
+        // Page load hote hi chalega
+        window.onload = function() {
+            loadUserStats();
+        };
+
+
+
+
+        async function askAstroAgent() {
+            const inputField = document.getElementById('user-question');
+            const question = inputField.value;
+            
+            // Agar box khali hai, toh kuch mat karo
+            if (!question) return;
+
+            
+            inputField.value = '';
+            typeWriter("Transmitting question to Astro-Agent...\n\n[Please wait, establishing secure connection...]");
+
+            // ⚠️ tyrtyhfthfgjhgcfhj ⚠️
+            const WEBHOOK_URL = "https://anukalppradhan777.app.n8n.cloud/webhook/master-astro-api"; 
+
+            try {
+                // Sawaal ko Webhook par bhejna
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        question: question, app_type: "planets" 
+                        
+                    })
+                });
+
+                if (response.ok) {
+                    const responseText = await response.text();
+                    
+                    // Check if response body is empty
+                    if (!responseText || responseText.trim() === '') {
+                        typeWriter("Astro-Agent: Connected but received empty response. Check n8n webhook configuration.");
+                        console.warn("Webhook returned empty response body.");
+                        return;
+                    }
+                    
+                    let aiAnswer = "Error parsing AI response.";
+                    
+                    // Try to parse as JSON first
+                    try {
+                        const data = JSON.parse(responseText);
+                        
+                        // ye wala section chatbox k liye hai
+                        if(data && data.text) {
+                             aiAnswer = data.text;
+                        } else if (data && data[0] && data[0].text) {
+                             aiAnswer = data[0].text; 
+                        } else {
+                             aiAnswer = JSON.stringify(data); // Fallback agar format alag hoga notepad wala code daalenge 
+                        }
+                    } catch (parseError) {
+                        // If not valid JSON, treat response as plain text
+                        aiAnswer = responseText;
+                    }
+
+                    // Answer ko screen par type karke dikhana
+                    typeWriter("Astro-Agent: \n\n" + aiAnswer);
+                } else {
+                    typeWriter("Connection Failed. n8n Server might be down or URL is incorrect.");
+                }
+            } catch (error) {
+                typeWriter("System Error: Unable to reach the AI backend. Is n8n running?");
+                console.error("Fetch error:", error);
+            }
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cosmic Deep Dive: Black Holes | AstroSphere</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --glass-bg: rgba(15, 15, 20, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.05);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.6);
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: 'SF Pro Display', -apple-system, sans-serif;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%; height: 100%; overflow: hidden;
+            background-color: #000; color: var(--text-primary);
+        }
+
+        #webgl-container {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; z-index: 1;
+        }
+
+        /* Cinematic UI Overlay */
+        #ui-layer {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; z-index: 10;
+            pointer-events: none; 
+            display: flex; flex-direction: column;
+            justify-content: space-between; padding: 2rem;
+        }
+
+        header {
+            display: flex; justify-content: space-between;
+            align-items: center; pointer-events: auto;
+        }
+
+        .logo-title h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; }
+        .logo-title span { font-size: 0.9rem; color: var(--text-secondary); font-weight: 300; }
+
+        .gallery-nav { display: flex; gap: 15px; }
+
+        .nav-btn {
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            color: white; padding: 10px 20px; border-radius: 30px;
+            cursor: pointer; transition: all 0.3s ease; font-weight: 400;
+        }
+        .nav-btn:hover, .nav-btn.active {
+            background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Scientific Info Panel */
+        .info-panel {
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px); padding: 25px; border-radius: 20px;
+            width: 350px; pointer-events: auto;
+        }
+        .info-panel h2 {
+            font-size: 2.2rem; margin-bottom: 5px; letter-spacing: 1px;
+            background: linear-gradient(90deg, #fff, #ff8a00);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .data-row {
+            display: flex; justify-content: space-between; margin-top: 15px;
+            border-bottom: 1px solid var(--glass-border); padding-bottom: 5px;
+        }
+        .data-label { color: var(--text-secondary); font-size: 0.85rem; letter-spacing: 1px;}
+        .data-value { font-weight: 600; font-size: 0.9rem; text-align: right;}
+
+        /* Astro Chatbot Window Layout */
+        #astro-chat {
+            position: fixed; 
+            bottom: 2rem; right: 2rem; width: 320px; z-index: 1000;
+            background: rgba(10, 10, 15, 0.75); border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border-radius: 15px; pointer-events: auto; display: flex;
+            flex-direction: column; overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+        }
+        .chat-header {
+            padding: 15px; border-bottom: 1px solid var(--glass-border);
+            font-weight: 600; display: flex; align-items: center; gap: 10px;
+        }
+        .chat-box {
+            height: 250px; padding: 15px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .msg { padding: 10px 15px; border-radius: 12px; font-size: 0.9rem; max-width: 85%; word-wrap: break-word; }
+        .msg.bot { background: rgba(255, 255, 255, 0.05); align-self: flex-start; border-bottom-left-radius: 2px; }
+        .msg.user { background: rgba(255, 138, 0, 0.2); border: 1px solid rgba(255, 138, 0, 0.3); align-self: flex-end; border-bottom-right-radius: 2px; }
+        
+        .chat-input { display: flex; border-top: 1px solid var(--glass-border); padding: 10px; }
+        .chat-input input { flex: 1; background: transparent; border: none; color: white; outline: none; padding: 5px 10px; font-size: 0.95rem;}
+        .chat-input button { background: transparent; border: none; color: #ff8a00; cursor: pointer; font-size: 1.2rem; transition: 0.2s; padding: 0 10px;}
+        .chat-input button:hover { color: #fff; transform: scale(1.1); }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; color: white; transition: opacity 1s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <h2 style="font-weight: 300; letter-spacing: 5px;">INITIALIZING ENGINE</h2>
+        <p style="color: gray; margin-top: 10px; font-size: 0.8rem;">GENERATING ACCRETION PLASMA...</p>
+    </div>
+
+    <div id="webgl-container"></div>
+
+    <div id="ui-layer">
+        <header>
+            <div class="logo-title" style="cursor: pointer;" onclick="window.location.href='index.html'">
+                <h1>Deep Space</h1>
+                <span>Black Hole Observatory Engine</span>
+            </div>
+            <div class="gallery-nav">
+                <button class="nav-btn active" onclick="switchTarget('gargantua')">Gargantua</button>
+                <button class="nav-btn" onclick="switchTarget('sagittarius')">Sagittarius A*</button>
+                <button class="nav-btn" onclick="switchTarget('m87')">M87*</button>
+                <button class="nav-btn" onclick="switchTarget('ton618')">TON 618</button>
+            </div>
+        </header>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%;">
+            <div class="info-panel" id="infoPanel">
+                <h2 id="bh-name">Gargantua</h2>
+                <p id="bh-desc" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 15px;">
+                    A rapidly spinning supermassive black hole with a glowing accretion disk and severe gravitational time dilation.
+                </p>
+                <div class="data-row"><span class="data-label">MASS</span><span class="data-value" id="bh-mass">100 Million M☉</span></div>
+                <div class="data-row"><span class="data-label">DISTANCE</span><span class="data-value" id="bh-dist">10 Billion Ly</span></div>
+                <div class="data-row"><span class="data-label">ROTATION SPIN</span><span class="data-value" id="bh-spin">99.8% Speed of Light</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="astro-chat">
+        <div class="chat-header">
+            <i class="fa-solid fa-robot" style="color: #ff8a00;"></i> 
+            <span>Astro AI System</span>
+        </div>
+        <div class="chat-box" id="chatbox">
+            <div class="msg bot">Hello Commander. I am your Astro AI assistant, feel free to ask me anything.</div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="userInput" placeholder="Ask about Gargantua..." onkeypress="handleEnter(event)">
+            <button onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        const container = document.getElementById('webgl-container');
+        const scene = new THREE.Scene();
+        
+        // Initial Camera Configurations
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 15, 35);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; controls.dampingFactor = 0.05;
+        controls.maxDistance = 100; controls.minDistance = 5;
+
+        // Cinematic High-Intensity Glow Passes
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0.1; 
+        bloomPass.strength = 1.8; 
+        bloomPass.radius = 0.8;
+
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // Dynamic Space Particle Starfield Matrix
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsCount = 10000;
+        const posArray = new Float32Array(starsCount * 3);
+
+        for(let i = 0; i < starsCount * 3; i+=3) {
+            posArray[i] = (Math.random() - 0.5) * 1000;
+            posArray[i+1] = (Math.random() - 0.5) * 1000;
+            posArray[i+2] = (Math.random() - 0.5) * 1000;
+        }
+        starsGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const starMesh = new THREE.Points(starsGeometry, new THREE.PointsMaterial({ size: 0.5, color: 0xffffff, transparent: true, opacity: 0.6 }));
+        scene.add(starMesh);
+
+        let warpSpeed = 0.005; 
+
+        const bhGroup = new THREE.Group();
+        scene.add(bhGroup);
+
+        const eventHorizon = new THREE.Mesh(new THREE.SphereGeometry(3.8, 64, 64), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+        bhGroup.add(eventHorizon);
+
+        const diskUniforms = {
+            color1: { value: new THREE.Color(0xff6600) },
+            color2: { value: new THREE.Color(0xff2200) }
+        };
+
+        const diskMaterial = new THREE.ShaderMaterial({
+            uniforms: diskUniforms,
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 color1;
+                uniform vec3 color2;
+                varying vec2 vUv;
+                void main() {
+                    float dist = distance(vUv, vec2(0.5));
+                    float alpha = smoothstep(0.5, 0.2, dist) * smoothstep(0.0, 0.1, dist);
+                    vec3 finalColor = mix(color1, color2, dist * 2.0);
+                    gl_FragColor = vec4(finalColor, alpha * 0.9);
+                }
+            `,
+            transparent: true, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false
+        });
+
+        const accretionDisk = new THREE.Mesh(new THREE.RingGeometry(4.2, 14, 128), diskMaterial);
+        accretionDisk.rotation.x = Math.PI / 2.1;
+        bhGroup.add(accretionDisk);
+
+        // Render Animation Loop
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+            
+            starMesh.rotation.y += warpSpeed;
+            accretionDisk.rotation.z = elapsedTime * -0.2; 
+            bhGroup.rotation.y = elapsedTime * 0.05;
+            
+            controls.update();
+            composer.render(); 
+        }
+
+        // Space Coordinates Astrophysical Dataset
+        const bhData = {
+            'gargantua': { name: "Gargantua", desc: "A rapidly spinning supermassive black hole with a glowing accretion disk and severe gravitational time dilation.", mass: "100 Million M☉", dist: "10 Billion Ly", spin: "99.8% Speed of Light", visuals: { scale: 1, c1: 0xff6600, c2: 0xff2200, camY: 15, camZ: 35 } },
+            'sagittarius': { name: "Sagittarius A*", desc: "The supermassive black hole at the galactic center of the Milky Way.", mass: "4.3 Million M☉", dist: "26,670 Ly", spin: "Moderate", visuals: { scale: 0.6, c1: 0xffaa00, c2: 0xff4400, camY: 5, camZ: 20 } },
+            'm87': { name: "M87*", desc: "The first black hole ever imaged by the Event Horizon Telescope.", mass: "6.5 Billion M☉", dist: "53.4 Million Ly", spin: "Highly Spinning", visuals: { scale: 2.2, c1: 0xff2200, c2: 0x880000, camY: 25, camZ: 50 } },
+            'ton618': { name: "TON 618", desc: "One of the most massive and luminous quasars in the observable universe.", mass: "66 Billion M☉", dist: "18.2 Billion Ly", spin: "Unknown", visuals: { scale: 4.5, c1: 0x00d4ff, c2: 0x0044ff, camY: 40, camZ: 80 } }
+        };
+
+        let currentTarget = 'Gargantua';
+        const WEBHOOK_URL = "https://anukalppradhan777.app.n8n.cloud/webhook/master-astro-api"; 
+
+        // Target Switching Morphing Execution Control
+        window.switchTarget = function(targetKey) {
+            currentTarget = bhData[targetKey].name;
+            const vData = bhData[targetKey].visuals;
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            if(window.event && window.event.target) {
+                window.event.target.classList.add('active');
+            }
+
+            // UI Card Meta Text Update Transitions via GSAP
+            gsap.to(".info-panel", { opacity: 0, y: 15, duration: 0.3, onComplete: () => {
+                document.getElementById('bh-name').innerText = bhData[targetKey].name;
+                document.getElementById('bh-desc').innerText = bhData[targetKey].desc;
+                document.getElementById('bh-mass').innerText = bhData[targetKey].mass;
+                document.getElementById('bh-dist').innerText = bhData[targetKey].dist;
+                document.getElementById('bh-spin').innerText = bhData[targetKey].spin;
+                
+                // Update chat dynamic placeholder context text
+                document.getElementById('userInput').placeholder = `Ask about ${bhData[targetKey].name}...`;
+                
+                gsap.to(".info-panel", { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" });
+            }});
+
+            // Hyperwarp Camera Acceleration Effect Matrix
+            warpSpeed = 0.1;
+            gsap.to({ value: 0.1 }, { value: 0.005, duration: 3, ease: "power2.out", onUpdate: function() { warpSpeed = this.targets()[0].value; } });
+            gsap.to(camera.position, { y: vData.camY, z: vData.camZ, x: (Math.random() - 0.5) * 10, duration: 3, ease: "power3.inOut" });
+
+            // Mesh Scaling Transformations
+            gsap.to(bhGroup.scale, { x: vData.scale, y: vData.scale, z: vData.scale, duration: 2.5, ease: "power3.inOut" });
+            gsap.to(diskUniforms.color1.value, { r: new THREE.Color(vData.c1).r, g: new THREE.Color(vData.c1).g, b: new THREE.Color(vData.c1).b, duration: 2 });
+            gsap.to(diskUniforms.color2.value, { r: new THREE.Color(vData.c2).r, g: new THREE.Color(vData.c2).g, b: new THREE.Color(vData.c2).b, duration: 2 });
+        };
+
+        window.handleEnter = function(e) { if(e.key === 'Enter') window.sendMessage(); };
+
+        // 🧠 FIXED CHAT DATA PIPELINE HANDLER
+        window.sendMessage = async function() {
+            const input = document.getElementById("userInput");
+            if (!input) return;
+            const text = input.value.trim();
+            if(!text) return;
+            
+            const chatbox = document.getElementById("chatbox");
+            
+            // Append User Question Element
+            chatbox.innerHTML += `<div class="msg user">${text}</div>`;
+            input.value = "";
+            chatbox.scrollTop = chatbox.scrollHeight;
+            
+            // Append Unique Identifier Loading Telemetry Element
+            const loadingId = "loadingMsg_" + Date.now();
+            chatbox.innerHTML += `<div class="msg bot" id="${loadingId}"><i class="fa-solid fa-circle-notch animate-spin text-orange-500 mr-2"></i> Synchronizing core matrix...</div>`;
+            chatbox.scrollTop = chatbox.scrollHeight;
+
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        question: text, 
+                        app_type: "blackhole", 
+                        target_object: currentTarget 
+                    })
+                });
+                
+                const data = await response.json();
+                console.log("N8N Matrix Data Packet Return:", data);
+
+                // Safe extraction of specific loading item
+                const targetLoadingElement = document.getElementById(loadingId);
+                if (targetLoadingElement) targetLoadingElement.remove();
+                
+                // Smart key filtering logic
+                const serverReply = data.text || data.output || (typeof data === 'string' ? data : JSON.stringify(data));
+                
+                chatbox.innerHTML += `<div class="msg bot">${serverReply}</div>`;
+            } catch (error) {
+                console.error("Transmission Interface Crash:", error);
+                const targetLoadingElement = document.getElementById(loadingId);
+                if (targetLoadingElement) targetLoadingElement.remove();
+                
+                chatbox.innerHTML += `<div class="msg bot" style="color:red;"><i class="fa-solid fa-triangle-exclamation"></i> Observatory node connection timeout.</div>`;
+            }
+            chatbox.scrollTop = chatbox.scrollHeight;
+        };
+
+        // Engine Loader Control
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loader = document.getElementById('loader');
+                if(loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.remove(), 1000);
+                }
+            }, 1000);
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
